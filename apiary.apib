@@ -1,80 +1,173 @@
-FORMAT: 1A
-HOST: http://polls.apiblueprint.org/
+swagger: '2.0'
+info:
+  title: Sensonar API
+  description: Integrate IoT solutions in real time
+  version: "1"
+host: hades.sensonar.com
+schemes:
+  - https
+basePath: /Up
+produces:
+  - application/json
+paths:
+  /probe:
+    get:
+      summary: Probes
+      description: |
+        The Probes endpoint returns information about the probes. Reseponse contains datetime, device info and a set of measurements.
+      parameters:
+        - name: from
+          in: query
+          description: Filter by `probed_at`. See [PHP's datetime formats](http://php.net/manual/en/datetime.formats.php) for valid format.
+          default: -1 hour
+          required: false
+          type: string
+          format: datetime
+        - name: to
+          in: query
+          description: Filter by `probed_at`. See [PHP's datetime formats](http://php.net/manual/en/datetime.formats.php) for valid format.
+          default: now
+          required: false
+          type: string
+          format: datetime
+        - name: node
+          in: query
+          description: Filter by node's serial number.
+          required: false
+          type: string
+      tags:
+        - Probe
+      responses:
+        200:
+          description: An array of probes
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Probe'
+          examples:
+            application/json:
+              data:
+                - serial_number: '0001'
+                  device_type: CleanAir
+                  probed_at: '2016-11-16T21:09:48+00:00'
+                  position:
+                    type: Point
+                    coordinates:
+                    - 20.9957411667
+                    - 52.2071016667
+                  measurements:
+                    PM2_5: 51.088062286377
+                    CO_A4: 309.31500636046
+                    PM1: 42.942924499512
+                    PM10: 51.762519836426
+                    SO2_A4: 6.4212830960069
+                    temperature: 8.875
+                - serial_number: '0001'
+                  device_type: CleanAir
+                  probed_at: '2016-11-16T21:09:33+00:00'
+                  position:
+                    type: Point
+                    coordinates:
+                    - 20.9957508333
+                    - 52.207121
+                  measurements:
+                    PM2_5: 50.256980895996
+                    CO_A4: 302.16471767726
+                    PM1: 42.230358123779
+                    PM10: 50.646724700928
+                    SO2_A4: 0.82078591153987
+                    temperature: 8.875
 
-# Sensonar
+  /measurement/definitions:
+    get:
+      summary: Measurement definitions
+      description: |
+        Get list of defined measurement types
+      tags:
+        - Measurement
+      responses:
+        200:
+          description: An array of measurement definitions
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/MeasurementDefinition'
+          examples:
+            application/json:
+              data:
+                - type: CO_A4
+                  unit: PPB
+                  description: Carbon monoxide
+                - type: PM1
+                  unit: μ/m³
+                  description: Particles 1μm
+                - type: PM10
+                  unit: μ/m³
+                  description: Particles 10μm
+                - type: PM2_5
+                  unit: μ/m³
+                  description: Particles 2.5μm
+                - type: SO2_A4
+                  unit: PPB
+                  description: Sulfur dioxide
+                - type: temperature
+                  unit: "°C"
+                  description: Temperature
 
-Polls is a simple API allowing consumers to view polls and vote in them.
-
-## Questions Collection [/questions]
-
-### List All Questions [GET]
-
-+ Response 200 (application/json)
-
-        [
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 2048
-                    }, {
-                        "choice": "Python",
-                        "votes": 1024
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 512
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 256
-                    }
-                ]
-            }
-        ]
-
-### Create a New Question [POST]
-
-You may create your own question using this action. It takes a JSON
-object containing a question and a collection of answers in the
-form of choices.
-
-+ Request (application/json)
-
-        {
-            "question": "Favourite programming language?",
-            "choices": [
-                "Swift",
-                "Python",
-                "Objective-C",
-                "Ruby"
-            ]
-        }
-
-+ Response 201 (application/json)
-
-    + Headers
-
-            Location: /questions/2
-
-    + Body
-
-            {
-                "question": "Favourite programming language?",
-                "published_at": "2015-08-05T08:40:51.620Z",
-                "choices": [
-                    {
-                        "choice": "Swift",
-                        "votes": 0
-                    }, {
-                        "choice": "Python",
-                        "votes": 0
-                    }, {
-                        "choice": "Objective-C",
-                        "votes": 0
-                    }, {
-                        "choice": "Ruby",
-                        "votes": 0
-                    }
-                ]
-            }
+definitions:
+  MeasurementDefinition:
+    type: object
+    required:
+      - type
+      - description
+      - unit
+    properties:
+      type:
+        type: string
+        description: Unique identifier representing a specific measurement type.
+      description:
+        type: string
+        description: Description of measurement type.
+      unit:
+        type: string
+        description: Display unit of measurement type.
+  GeoJSONPosition:
+    type: object
+    required:
+      - type
+      - coordinates
+    properties:
+      type:
+        type: string
+        default: Point
+      coordinates:
+        type: array
+        items:
+          type: number
+          format: float
+  Probe:
+    type: object
+    required:
+      - serial_number
+      - device_type
+      - probed_at
+      - position
+      - measurements
+    properties:
+      serial_number:
+        type: string
+        description: Unique serial number representing a specific device.
+      device_type:
+        type: string
+        description: Device type.
+      probed_at:
+        type: string
+        format: date-time
+        description: Display name of product.
+      position:
+        $ref: '#/definitions/GeoJSONPosition'
+        description: A [GeoJSON](https://en.wikipedia.org/wiki/GeoJSON) position object.
+      measurements:
+        type: object
+        additionalProperties:
+          type: string

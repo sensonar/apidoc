@@ -6,12 +6,49 @@ info:
 host: hades.sensonar.com
 schemes:
   - https
-basePath: /
+basePath: /api
+consumes:
+  - application/json
 produces:
   - application/json
+securityDefinitions:
+  JWT:
+    type: apiKey
+    description: |
+      Bearer authorization using JWT tokens. |
+      For example: Authorization: Bearer eyJhbGciOiJSUzI1NiJ9.eyJ |
+      Get JWT token endpoint is located at: /api/login
+    in: header
+    name: Authorization
 paths:
-  /probe:
+  /login:
+    post:
+      summary: JWT token request
+      description: |
+        Request a JWT token authenticated by username and password.
+      parameters:
+        - name: username
+          in: formData
+          description: Username
+          required: true
+          type: string
+        - name: password
+          in: formData
+          description: Password
+          required: true
+          type: string
+      tags:
+        - Security
+      responses:
+        200:
+          description: JWT token
+          examples:
+            application/json:
+              token: "eyJhbGciOiJSUzI1NiJ9.eyJ1c2VybmFtZSI6ImprYWZxxx"
+  /probes:
     get:
+      security:
+        - JWT: []
       summary: Probes
       description: |
         The Probes endpoint returns information about the probes. Reseponse contains datetime, device info and a set of measurements.
@@ -78,8 +115,10 @@ paths:
                     SO2_A4: 0.82078591153987
                     temperature: 8.875
 
-  /measurement/definitions:
+  /measurements/definitions:
     get:
+      security:
+        - JWT: []
       summary: Measurement definitions
       description: |
         Get list of defined measurement types
@@ -99,13 +138,13 @@ paths:
                   unit: PPB
                   description: Carbon monoxide
                 - type: PM1
-                  unit: μ/m³
+                  unit: μg/m³
                   description: Particles 1μm
                 - type: PM10
-                  unit: μ/m³
+                  unit: μg/m³
                   description: Particles 10μm
                 - type: PM2_5
-                  unit: μ/m³
+                  unit: μg/m³
                   description: Particles 2.5μm
                 - type: SO2_A4
                   unit: PPB
